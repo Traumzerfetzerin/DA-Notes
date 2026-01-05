@@ -32,14 +32,24 @@ export class NoteListComponent {
 
 
   /**
-   * Returns the list of notes that are not in the trash.
-   * @returns {Note[]} - The list of notes that are not in the trash.
+   * Returns the list of notes based on the current status and favorite filter.
+   * If the status is 'notes', it returns either the normal notes or the marked notes based on the favorite filter.
+   * If the status is 'trash', it returns the trash notes.
+   * @returns {Note[]} - The list of notes based on the current status and favorite filter.
    */
   getList(): Note[] {
-    return this.noteService.normalNotes;
+    if (this.status == 'notes') {
+      if (this.favFilter == 'all') {
+        return this.noteService.normalNotes;
+      } else {
+        return this.noteService.normalMarkedNotes;
+      }
+    } else {
+      return this.noteService.trashNotes;
+    }
   }
 
-  
+
   /**
    * Returns the list of notes that are in the trash.
    * @returns {Note[]} - The list of notes that are in the trash.

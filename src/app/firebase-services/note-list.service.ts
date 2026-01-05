@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { Firestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc } from '@angular/fire/firestore';
+import { query, orderBy, limit, where, Firestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { Note } from '../interfaces/note.interface';
 
 
@@ -12,18 +12,28 @@ export class NoteListService {
 
   trashNotes: Note[] = [];
   normalNotes: Note[] = [];
+  normalMarkedNotes: Note[] = [];
 
   // items$;
   // items;
 
   unsubTrash;
   unsubNotes;
+  unsubMarkedNotes;
 
   firestore: Firestore = inject(Firestore);
 
 
+  /**
+   * Constructor for the NoteListService class.
+   * Sets up Firestore listeners and unsubscribes from the 'items' collection.
+   * Sets up Firestore listeners and unsubscribes from the 'trash' collection.
+   * Sets up Firestore listeners and unsubscribes from the 'markedNotes' collection.
+   * Sets up Firestore listeners and unsubscribes from the 'notes' collection.
+   */
   constructor() {
     this.unsubNotes = this.subNotesList();
+    this.unsubMarkedNotes = this.subMarkedNotesList();
     this.unsubTrash = this.subTrashList();
 
     // this.unsubNotes = onSnapshot(this.getSingleDocRef("notes", "123456"), (element) => {
@@ -113,7 +123,7 @@ export class NoteListService {
   //   )
   // }
 
-  
+
   /**
    * Adds a new note to the specified collection in Firestore.
    * @param {Note} item - The note to be added.
@@ -139,7 +149,6 @@ export class NoteListService {
   }
 
 
-
   /**
  * Destroys all Firestore listeners and unsubscribes from the 'items' collection.
  *This function should be called in the ngOnDestroy lifecycle hook of the component.
@@ -147,6 +156,7 @@ export class NoteListService {
   ngonDestroy() {
     this.unsubNotes();
     this.unsubTrash();
+    this.unsubMarkedNotes();
     // this.items.unsubscribe();
   }
 
@@ -157,10 +167,28 @@ export class NoteListService {
    * @returns {Observable<any>} - An observable of the list of elements in the 'notes' collection.
    */
   subNotesList() {
-    return onSnapshot(this.getNotesRef(), (list) => {
+    const q = query(this.getNotesRef(), limit(100));
+    return onSnapshot(q, (list) => {
       this.normalNotes = [];
       list.forEach(element => {
         this.normalNotes.push(this.setNoteObject(element.data(), element.id));
+      });
+    });
+  }
+
+
+  /**
+   * Subscribes to the 'notes' collection and logs each element in the list to the console.
+   * The subscription is filtered to only include notes that are marked.
+   * This function should be called in the ngOnInit lifecycle hook of the component.
+   * @returns {Observable<any>} - An observable of the list of elements in the 'notes' collection.
+   */
+  subMarkedNotesList() {
+    const q = query(this.getNotesRef(), where("marked", "==", true));
+    return onSnapshot(q, (list) => {
+      this.normalMarkedNotes = [];
+      list.forEach(element => {
+        this.normalMarkedNotes.push(this.setNoteObject(element.data(), element.id));
       });
     });
   }
